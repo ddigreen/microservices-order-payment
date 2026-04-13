@@ -3,34 +3,48 @@ package main
 import (
 	"database/sql"
 	"log"
+	"net"
+	"os"
 
 	"payment-service/internal/repository"
-	"payment-service/internal/transport/http"
+	grpchandler "payment-service/internal/transport/grpc"
 	"payment-service/internal/usecase"
 
-	"github.com/gin-gonic/gin"
+	pb "github.com/ddigreen/payment-generated/payment"
 	_ "github.com/lib/pq"
+	"google.golang.org/grpc"
 )
 
 func main() {
-	dsn := "host=localhost port=5432 user=amangeldievdiasbek dbname=payment_db sslmode=disable"
+	port := os.Getenv("PAYMENT_GRPC_PORT")
+	if port == "" {
+		port = "50051"
+	}
 
+	dsn := "host=localhost port=5432 user=amangeldievdiasbek dbname=payment_db sslmode=disable"
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	if err := db.Ping(); err != nil {
 		log.Fatal(err)
 	}
 
 	repo := repository.NewSQLPaymentRepository(db)
 	uc := usecase.NewPaymentUseCase(repo)
-	handler := http.NewPaymentHandler(uc)
 
-	r := gin.Default()
+	lis, err := net.Listen("tcp", ":"+port)
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
 
-	r.POST("/payments", handler.ProcessPayment)
+	grpcServer := grpc.NewServer()
 
-	r.Run(":8081")
+	paymentHandler := grpchandler.NewPaymentServer(uc)
+	pb.RegisterPaymentServiceServer(grpcServer, paymentHandler)
+
+	log.Printf("Payment gRPC Server listening on port %s", port)
+	if err := grpcServer.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
 }
