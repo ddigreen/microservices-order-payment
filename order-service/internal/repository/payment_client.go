@@ -1,54 +1,53 @@
 package repository
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"time"
+
+	pb "github.com/ddigreen/payment-generated/payment"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type paymentClient struct {
-	httpClient *http.Client
-	baseURL    string
+	client pb.PaymentServiceClient
+	conn   *grpc.ClientConn
 }
 
-func NewPaymentClient(baseURL string) *paymentClient {
+func NewPaymentClient(grpcAddress string) (*paymentClient, error) {
+	conn, err := grpc.Dial(grpcAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to payment grpc server: %w", err)
+	}
+
+	client := pb.NewPaymentServiceClient(conn)
+
 	return &paymentClient{
-		httpClient: &http.Client{
-			Timeout: 2 * time.Second,
-		},
-		baseURL: baseURL,
+		client: client,
+		conn:   conn,
+	}, nil
+}
+
+func (c *paymentClient) Close() {
+	if c.conn != nil {
+		c.conn.Close()
 	}
 }
 
 func (c *paymentClient) AuthorizePayment(ctx context.Context, orderID string, amount int64) (string, string, error) {
-	url := fmt.Sprintf("%s/payments", c.baseURL)
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
 
-	body, _ := json.Marshal(map[string]interface{}{
-		"order_id": orderID,
-		"amount":   amount,
-	})
+	req := &pb.PaymentRequest{
+		OrderId: orderID,
+		Amount:  float64(amount),
+	}
 
-	req, _ := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.client.ProcessPayment(ctx, req)
 	if err != nil {
-		return "", "", fmt.Errorf("payment service unavailable: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", "", fmt.Errorf("payment service returned error: %d", resp.StatusCode)
+		return "", "", fmt.Errorf("grpc payment service unavailable: %w", err)
 	}
 
-	var result struct {
-		TransactionID string `json:"transaction_id"`
-		Status        string `json:"status"`
-	}
-	json.NewDecoder(resp.Body).Decode(&result)
-
-	return result.TransactionID, result.Status, nil
+	return "", resp.Status, nil
 }

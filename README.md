@@ -30,14 +30,6 @@ The services communicate synchronously over **REST**. The Order Service acts as 
 4. `go run cmd/order-service/main.go`
 5. `go run cmd/payment-service/main.go`
 
-##The Diagram
-[ ORDER SERVICE (:8080) ]          [ PAYMENT SERVICE (:8081) ]
--------------------------          ---------------------------
-|   Transport (HTTP)    |          |    Transport (HTTP)     |
-|          |            |          |           ^             |
-|   UseCase (Logic)     | --REST-->|    UseCase (Logic)      |
-|          |            | (Timeout)|           |             |
-|   Repository (DB)     |          |    Repository (DB)      |
--------------------------          ---------------------------
-           |                                   |
-    [ Order Database ]                 [ Payment Database ]
+## Architecture Diagram
+
+![Project Architecture](./architectureadv.png)
