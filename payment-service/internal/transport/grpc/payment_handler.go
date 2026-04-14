@@ -8,6 +8,7 @@ import (
 	"payment-service/internal/usecase"
 
 	pb "github.com/ddigreen/payment-generated/payment"
+	"github.com/google/uuid"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -26,6 +27,7 @@ func (s *paymentServer) ProcessPayment(ctx context.Context, req *pb.PaymentReque
 	log.Printf("Received payment request for Order: %s, Amount: %f", req.OrderId, req.Amount)
 
 	paymentInput := &domain.Payment{
+		ID:      uuid.New().String(),
 		OrderID: req.OrderId,
 		Amount:  int64(req.Amount),
 	}
