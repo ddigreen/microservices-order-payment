@@ -3,14 +3,18 @@ package main
 import (
 	"database/sql"
 	"log"
+	"net"
 	"os"
 
 	"order-service/internal/repository"
+	ordergrpc "order-service/internal/transport/grpc"
 	"order-service/internal/transport/http"
 	"order-service/internal/usecase"
 
+	pb "github.com/ddigreen/payment-generated/payment"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -47,8 +51,25 @@ func main() {
 	r.GET("/orders/:id", handler.GetOrder)
 	r.PATCH("/orders/:id/cancel", handler.CancelOrder)
 
-	log.Println("Order Service starting on :8080...")
+	grpcPort := ":50052"
+	lis, err := net.Listen("tcp", grpcPort)
+	if err != nil {
+		log.Fatalf("failed to listen on gRPC port: %v", err)
+	}
+
+	grpcServer := grpc.NewServer()
+	orderStreamHandler := ordergrpc.NewOrderGrpcServer(orderUC)
+	pb.RegisterPaymentServiceServer(grpcServer, orderStreamHandler)
+
+	go func() {
+		log.Printf("Order Service gRPC Streaming Server starting on %s...", grpcPort)
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Fatalf("Failed to run gRPC server: %v", err)
+		}
+	}()
+
+	log.Println("Order Service REST HTTP starting on :8080...")
 	if err := r.Run(":8080"); err != nil {
-		log.Fatal("Failed to run server: ", err)
+		log.Fatal("Failed to run HTTP server: ", err)
 	}
 }
