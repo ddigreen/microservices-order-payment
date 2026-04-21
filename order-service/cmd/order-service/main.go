@@ -49,6 +49,7 @@ func main() {
 	r.POST("/orders", handler.CreateOrder)
 	r.GET("/orders/recent", handler.GetRecent)
 	r.GET("/orders/:id", handler.GetOrder)
+	r.GET("/payments", handler.GetPayments)
 	r.PATCH("/orders/:id/cancel", handler.CancelOrder)
 
 	grpcPort := ":50052"

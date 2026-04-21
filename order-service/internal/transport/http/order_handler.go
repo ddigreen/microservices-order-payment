@@ -85,3 +85,19 @@ func (h *OrderHandler) GetRecent(c *gin.Context) {
 
 	c.JSON(200, orders)
 }
+
+func (h *OrderHandler) GetPayments(c *gin.Context) {
+	minStr := c.DefaultQuery("min", "0")
+	maxStr := c.DefaultQuery("max", "0")
+
+	min, _ := strconv.ParseInt(minStr, 10, 64)
+	max, _ := strconv.ParseInt(maxStr, 10, 64)
+
+	resp, err := h.useCase.ListPayments(c.Request.Context(), min, max)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "gRPC request failed: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, resp.Payments)
+}

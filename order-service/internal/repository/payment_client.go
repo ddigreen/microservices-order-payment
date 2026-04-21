@@ -51,3 +51,11 @@ func (c *paymentClient) AuthorizePayment(ctx context.Context, orderID string, am
 
 	return "", resp.Status, nil
 }
+
+func (c *paymentClient) ListPayments(ctx context.Context, min, max int64) (*pb.ListPaymentsResponse, error) {
+	req := &pb.ListPaymentsRequest{
+		MinAmount: min,
+		MaxAmount: max,
+	}
+	return c.client.ListPayments(ctx, req)
+}

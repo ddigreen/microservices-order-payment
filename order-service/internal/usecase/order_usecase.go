@@ -5,6 +5,8 @@ import (
 	"errors"
 
 	"order-service/internal/domain"
+
+	pb "github.com/ddigreen/payment-generated/payment"
 )
 
 type OrderUseCase struct {
@@ -63,4 +65,8 @@ func (uc *OrderUseCase) GetRecentOrders(ctx context.Context, limit int) ([]*doma
 	}
 
 	return uc.repo.GetRecent(ctx, limit)
+}
+
+func (u *OrderUseCase) ListPayments(ctx context.Context, min, max int64) (*pb.ListPaymentsResponse, error) {
+	return u.paymentClient.ListPayments(ctx, min, max)
 }
