@@ -3,7 +3,7 @@ module payment-service
 go 1.25.0
 
 require (
-	github.com/ddigreen/payment-generated v0.0.0-20260413184734-825b7b1713ba
+	github.com/ddigreen/payment-generated v0.0.0-20260421104121-608e63bec762
 	github.com/gin-gonic/gin v1.12.0
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.12.1

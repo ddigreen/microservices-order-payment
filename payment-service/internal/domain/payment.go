@@ -15,4 +15,5 @@ type Payment struct {
 type PaymentRepository interface {
 	Create(ctx context.Context, payment *Payment) error
 	GetByOrderID(ctx context.Context, orderID string) (*Payment, error)
+	FindByAmountRange(ctx context.Context, min, max int64) ([]*Payment, error)
 }

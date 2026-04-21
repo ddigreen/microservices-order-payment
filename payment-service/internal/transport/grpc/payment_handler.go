@@ -45,3 +45,24 @@ func (s *paymentServer) ProcessPayment(ctx context.Context, req *pb.PaymentReque
 func (s *paymentServer) SubscribeToOrderUpdates(req *pb.OrderRequest, stream pb.PaymentService_SubscribeToOrderUpdatesServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeToOrderUpdates is handled by Order Service")
 }
+
+func (s *paymentServer) ListPayments(ctx context.Context, req *pb.ListPaymentsRequest) (*pb.ListPaymentsResponse, error) {
+	payments, err := s.useCase.ListPayments(ctx, req.MinAmount, req.MaxAmount)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+
+	var pbPayments []*pb.PaymentResponse
+	for _, p := range payments {
+		pbPayments = append(pbPayments, &pb.PaymentResponse{
+			Status:  p.Status,
+			Id:      p.ID,
+			OrderId: p.OrderID,
+			Amount:  p.Amount,
+		})
+	}
+
+	return &pb.ListPaymentsResponse{
+		Payments: pbPayments,
+	}, nil
+}
