@@ -32,31 +32,4 @@ The services communicate synchronously over **REST**. The Order Service acts as 
 
 ## Architecture Diagram
 
-![Project Architecture](./architectureadv.png)
-
-graph TD
-    %% Настройки цветов и стилей для красоты
-    classDef client fill:#E1F5FE,stroke:#0288D1,stroke-width:2px,color:#000
-    classDef service fill:#E8F5E9,stroke:#388E3C,stroke-width:2px,color:#000
-    classDef db fill:#FFF3E0,stroke:#F57C00,stroke-width:2px,color:#000
-    classDef grpc fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#000
-
-    %% Компоненты системы
-    User((Thunder Client<br/>REST Клиент)):::client
-    OrderDB[(PostgreSQL<br/>order_db)]:::db
-    
-    subgraph "Order Microservice"
-        OrderREST[Order REST API<br/>Port: 8080]:::service
-        OrderGRPC[Order gRPC Stream<br/>Port: 50052]:::grpc
-    end
-    
-    PaymentService[Payment Service<br/>gRPC Port: 50051]:::grpc
-    StreamClient((Go Client Script<br/>Слушатель статусов)):::client
-
-    %% Связи и стрелки
-    User -- "1. POST /orders\n(HTTP JSON)" --> OrderREST
-    OrderREST -- "2. Create / Update\n(SQL)" --> OrderDB
-    OrderREST -- "3. ProcessPayment\n(gRPC Unary)" --> PaymentService
-    
-    StreamClient -- "4. SubscribeToOrderUpdates\n(gRPC Server-Side Stream)" --> OrderGRPC
-    OrderGRPC -. "5. Читает изменения\nстатусов" .-> OrderDB
+![Project Architecture](./diagrammicroservices.png)
