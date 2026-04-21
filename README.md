@@ -32,4 +32,4 @@ The services communicate synchronously over **REST**. The Order Service acts as 
 
 ## Architecture Diagram
 
-![Project Architecture](./diagrammicroservices.png)
+![Project Architecture](./diagramicroservices.png)
