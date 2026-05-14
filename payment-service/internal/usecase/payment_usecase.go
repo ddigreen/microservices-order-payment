@@ -3,18 +3,24 @@ package usecase
 import (
 	"context"
 	"errors"
+	"log"
 
+	"payment-service/internal/broker"
 	"payment-service/internal/domain"
 
 	"github.com/google/uuid"
 )
 
 type PaymentUseCase struct {
-	repo domain.PaymentRepository
+	repo      domain.PaymentRepository
+	publisher broker.EventPublisher
 }
 
-func NewPaymentUseCase(r domain.PaymentRepository) *PaymentUseCase {
-	return &PaymentUseCase{repo: r}
+func NewPaymentUseCase(r domain.PaymentRepository, pub broker.EventPublisher) *PaymentUseCase {
+	return &PaymentUseCase{
+		repo:      r,
+		publisher: pub,
+	}
 }
 
 func (u *PaymentUseCase) ProcessPayment(ctx context.Context, p *domain.Payment) (string, string, error) {
@@ -29,6 +35,17 @@ func (u *PaymentUseCase) ProcessPayment(ctx context.Context, p *domain.Payment) 
 		return "", "", err
 	}
 
+	event := broker.PaymentEvent{
+		OrderID:       p.OrderID,
+		Amount:        p.Amount,
+		CustomerEmail: "user@example.com",
+		Status:        p.Status,
+	}
+
+	if err := u.publisher.PublishPaymentCompleted(ctx, event); err != nil {
+		log.Printf("Warning: failed to publish event to RabbitMQ: %v", err)
+	}
+
 	return p.TransactionID, p.Status, nil
 }
 
@@ -37,6 +54,5 @@ func (u *PaymentUseCase) ListPayments(ctx context.Context, min, max int64) ([]*d
 		return nil, errors.New("min_amount cannot be greater than max_amount")
 	}
 
-	// Вызываем метод репозитория, который мы только что создали
 	return u.repo.FindByAmountRange(ctx, min, max)
 }

@@ -18,7 +18,7 @@ import (
 )
 
 func main() {
-	dsn := "host=localhost port=5432 user=amangeldievdiasbek dbname=order_db sslmode=disable"
+	dsn := "host=postgres port=5432 user=amangeldievdiasbek password=password dbname=order_db sslmode=disable"
 
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
@@ -31,7 +31,7 @@ func main() {
 
 	paymentAddr := os.Getenv("PAYMENT_GRPC_ADDR")
 	if paymentAddr == "" {
-		paymentAddr = "localhost:50051"
+		paymentAddr = "payment-service:50051"
 	}
 
 	payClient, err := repository.NewPaymentClient(paymentAddr)

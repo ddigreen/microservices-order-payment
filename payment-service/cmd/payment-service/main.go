@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"payment-service/internal/broker"
 	"payment-service/internal/repository"
 	grpchandler "payment-service/internal/transport/grpc"
 	"payment-service/internal/usecase"
@@ -40,7 +41,7 @@ func main() {
 		port = "50051"
 	}
 
-	dsn := "host=localhost port=5432 user=amangeldievdiasbek dbname=payment_db sslmode=disable"
+	dsn := "host=postgres port=5432 user=amangeldievdiasbek password=password dbname=payment_db sslmode=disable"
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		log.Fatal(err)
@@ -49,8 +50,15 @@ func main() {
 		log.Fatal(err)
 	}
 
+	rabbitURL := "amqp://guest:guest@rabbitmq:5672/"
+	publisher, err := broker.NewRabbitMQPublisher(rabbitURL)
+	if err != nil {
+		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
+	}
+	defer publisher.Close()
+
 	repo := repository.NewSQLPaymentRepository(db)
-	uc := usecase.NewPaymentUseCase(repo)
+	uc := usecase.NewPaymentUseCase(repo, publisher)
 
 	lis, err := net.Listen("tcp", ":"+port)
 	if err != nil {
